@@ -15,3 +15,18 @@
 .animate-chaser {
   animation: chaser 0.8s linear infinite;
 }
+
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #ffd700;
+  top: -20px;
+  animation: confetti-fall 3s linear forwards;
+}

@@ -21,7 +21,43 @@ const GameControls = memo(({
     );
   }
 
-  // 2. THE CHOICE STATE (Stay vs. Spin Again)
+  // 2. BONUS ROUND STATE ($10k Chase)
+  if (gameState === "bonus_round" || gameState === "bonus_only") {
+    return (
+      <div className="flex flex-col items-center gap-4 w-full animate-in slide-in-from-bottom-4">
+        <div className="text-yellow-400 font-black italic text-center text-xl tracking-tighter drop-shadow-md">
+          {gameState === "bonus_round" ? "✨ SPINNING FOR THE $10,000 BONUS! ✨" : "🏆 VICTORY LAP SPIN!"}
+        </div>
+        <button
+          onClick={onSpin}
+          disabled={isSpinning}
+          className="w-full max-w-md py-8 bg-gradient-to-b from-yellow-400 to-yellow-600 hover:from-yellow-300 hover:to-yellow-500 rounded-2xl text-3xl font-black italic shadow-[0_10px_0_rgb(133,77,14)] active:shadow-none active:translate-y-2 transition-all border-4 border-yellow-200 text-slate-900"
+        >
+          {isSpinning ? "BIG MONEY..." : "BONUS SPIN!"}
+        </button>
+      </div>
+    );
+  }
+
+  // 3. SPIN-OFF STATE (Tie Breaker)
+  if (gameState === "spin_off") {
+    return (
+      <div className="flex flex-col items-center gap-4 w-full">
+        <div className="text-red-400 font-black uppercase text-sm tracking-[0.3em]">
+          ⚠️ Sudden Death Spin-Off ⚠️
+        </div>
+        <button
+          onClick={onSpin}
+          disabled={isSpinning}
+          className="w-full max-w-md py-6 bg-red-600 hover:bg-red-500 rounded-2xl text-2xl font-black italic shadow-[0_8px_0_rgb(153,27,27)] active:shadow-none active:translate-y-2 transition-all border-2 border-red-400"
+        >
+          {isSpinning ? "ELIMINATION SPIN..." : "TIE-BREAKER SPIN!"}
+        </button>
+      </div>
+    );
+  }
+
+  // 4. THE CHOICE STATE (Stay vs. Spin Again)
   if (isAwaitingChoice) {
     return (
       <div className="flex gap-4 w-full max-w-md animate-in zoom-in duration-300">
@@ -41,15 +77,11 @@ const GameControls = memo(({
     );
   }
 
-  // 3. THE DEFAULT SPIN STATE
+  // 5. THE DEFAULT SPIN STATE
   return (
     <button
       onClick={onSpin}
       disabled={isSpinning}
-      /* 1. Removed flex-1 (the cause of the skinniness)
-         2. Added w-full max-w-md (gives it the same "heft" as the choice buttons)
-         3. Kept your exact colors/shadows from the Spin Again button
-      */
       className="w-full max-w-md py-6 bg-green-600 hover:bg-green-500 disabled:opacity-30 rounded-2xl text-2xl font-black italic shadow-[0_8px_0_rgb(20,83,45)] active:shadow-none active:translate-y-2 transition-all border-2 border-green-400"
     >
       {isSpinning ? "SPINNING..." : "SPIN THE WHEEL!"}
