@@ -31,7 +31,7 @@ const Wheel = memo(({
         <div className="relative group mt-20" style={{ width: size, height: size }}>
 
             {/* 1. THE STATIC CABINET (Does NOT rotate) */}
-            <div className="absolute -inset-10 bg-gradient-to-b from-slate-900 via-black to-slate-900 rounded-full shadow-[0_40px_80px_rgba(0,0,0,0.8)] border-8 border-slate-800 z-0" />
+            <div className="absolute -inset-10 bg-linear-to-b from-slate-900 via-black to-slate-900 rounded-full  border-8 border-slate-800 z-0" />
 
             {/* 2. THE FIXED LIGHTS LAYER (Does NOT rotate) */}
             <svg
@@ -49,11 +49,13 @@ const Wheel = memo(({
                             cx={pos.x}
                             cy={pos.y}
                             r="4.5"
+                            // Use a brighter color for the active "on" state
                             fill={i % 2 === 0 ? "#fbbf24" : "#fffbeb"}
-                            className={`${isSpinning ? "animate-pulse" : "opacity-80"}`}
+                            // Only apply the animation class when spinning
+                            className={isSpinning ? "animate-chaser" : "opacity-40"}
                             style={{
-                                animationDelay: `${i * 80}ms`,
-                                filter: isSpinning ? "drop-shadow(0 0 8px rgba(251,191,36,0.8))" : "none"
+                                // This stagger creates the "spinning lights" effect
+                                animationDelay: `${i * (800 / LIGHTS_COUNT)}ms`,
                             }}
                         />
                     );
@@ -62,7 +64,7 @@ const Wheel = memo(({
 
             {/* 3. THE RED POINTER (Fixed at the top) */}
             <div className="absolute -top-14 left-1/2 -translate-x-1/2 z-50 drop-shadow-[0_8px_8px_rgba(0,0,0,0.8)]">
-                <div className="w-0 h-0 border-l-[28px] border-r-[28px] border-t-[56px] border-l-transparent border-r-transparent border-t-red-600" />
+                <div className="w-0 h-0 border-l-28 border-r-28 border-t-56 border-l-transparent border-r-transparent border-t-red-600" />
                 <div className="w-3 h-12 bg-slate-500 absolute -top-6 left-1/2 -translate-x-1/2 rounded-full border-2 border-slate-700" />
             </div>
 
@@ -102,23 +104,24 @@ const Wheel = memo(({
                                 d={describeWedge(CENTER, CENTER, RADIUS, startAngle, endAngle)}
                                 fill={fill}
                                 stroke="#000"
-                                strokeWidth="2"
+                                strokeWidth="1"
                             />
+
                             <circle
-                                cx={polarToCartesian(CENTER, CENTER, RADIUS - 8, startAngle).x}
-                                cy={polarToCartesian(CENTER, CENTER, RADIUS - 8, startAngle).y}
-                                r="3.5"
+                                cx={polarToCartesian(CENTER, CENTER, RADIUS - 1, startAngle).x}
+                                cy={polarToCartesian(CENTER, CENTER, RADIUS - 3, startAngle).y}
+                                r="4"
                                 fill="#334155"
                             />
                             <text
                                 x={textPos.x}
                                 y={textPos.y}
                                 fill={val === 100 ? "#ef4444" : "#0f172a"}
-                                fontSize="34"
+                                fontSize="30"
                                 fontWeight="900"
                                 textAnchor="middle"
                                 dominantBaseline="middle"
-                                transform={`rotate(${midAngle} ${textPos.x} ${textPos.y})`}
+                                transform={`rotate(${midAngle + 90} ${textPos.x} ${textPos.y})`}
                                 className="font-black"
                             >
                                 {val === 100 ? "1.00" : val}

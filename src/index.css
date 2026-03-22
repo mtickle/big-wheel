@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+@keyframes chaser {
+  0%,
+  100% {
+    opacity: 0.3;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.5) drop-shadow(0 0 8px #fbbf24);
+  }
+}
+
+.animate-chaser {
+  animation: chaser 0.8s linear infinite;
+}
