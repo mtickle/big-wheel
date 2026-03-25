@@ -3,7 +3,7 @@ import { memo } from 'react';
 const GameLogs = memo(({ logs }) => {
     return (
         <div className="bg-slate-800/40 p-4 rounded-2xl border-2 border-slate-700 flex flex-col h-[350px] w-full">
-            <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 px-1 flex justify-between">
+            <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-3 px-1 flex justify-between">
                 <span>Game History</span>
                 {logs.length > 0 && <span className="text-[9px] animate-pulse text-red-500">● LIVE</span>}
             </h3>
@@ -27,9 +27,7 @@ const GameLogs = memo(({ logs }) => {
                                 <span className={`font-black uppercase tracking-tighter ${isBigWin ? "text-yellow-400" : isSystem ? "text-blue-400" : "text-slate-400"}`}>
                                     {log.name}
                                 </span>
-                                <span className="text-[9px] font-mono text-slate-600">
-                                    {new Date(log.id).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                </span>
+
                             </div>
 
                             <div className="flex items-center gap-1">

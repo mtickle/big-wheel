@@ -1,5 +1,5 @@
 import confetti from "canvas-confetti"; // Make sure to npm install canvas-confetti
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import GameControls from "./components/GameControls";
 import GameLogs from "./components/GameLogs";
 import Scoreboard from "./components/Scoreboard";
@@ -68,6 +68,74 @@ export default function App() {
     }());
   }, []);
 
+  //--- STRESS TEST FUNCTION (EXPOSED TO WINDOW FOR EASY DEBUGGING)
+  useEffect(() => {
+    window.runStressTest = (iterations = 100) => {
+      const SEGMENTS = 20;
+      const stats = {
+        p1Wins: 0, p2Wins: 0, p3Wins: 0,
+        totalBusts: 0, totalDollars: 0, totalTies: 0,
+        doubleBusts: 0 // P1 & P2 both out
+      };
+
+      console.log(`🚀 Starting Stress Test: ${iterations} iterations...`);
+      console.time("Execution Time");
+
+      for (let i = 0; i < iterations; i++) {
+        let scores = [0, 0, 0];
+        let leader = { index: -1, score: 0 };
+
+        // --- PLAYER 1 & 2 ---
+        for (let p = 0; p < 2; p++) {
+          let spins = 0;
+          while (spins < 2) {
+            scores[p] += WHEEL_VALUES[Math.floor(Math.random() * SEGMENTS)];
+            spins++;
+            if (scores[p] >= 65 || scores[p] > leader.score) break;
+          }
+          if (scores[p] <= 100 && scores[p] > leader.score) {
+            leader = { index: p, score: scores[p] };
+          }
+        }
+
+        // --- PLAYER 3 STRATEGY (The "Last Look") ---
+        const p1Busted = scores[0] > 100;
+        const p2Busted = scores[1] > 100;
+
+        if (p1Busted && p2Busted) {
+          stats.doubleBusts++;
+          // P3 wins automatically - stays on first spin regardless of value
+          scores[2] = WHEEL_VALUES[Math.floor(Math.random() * SEGMENTS)];
+          leader = { index: 2, score: scores[2] };
+        } else {
+          let p3Spins = 0;
+          while (p3Spins < 2) {
+            scores[2] += WHEEL_VALUES[Math.floor(Math.random() * SEGMENTS)];
+            p3Spins++;
+            if (scores[2] > leader.score) break;
+          }
+          if (scores[2] <= 100 && scores[2] > leader.score) {
+            leader = { index: 2, score: scores[2] };
+          }
+        }
+
+        // --- RECORD RESULTS ---
+        if (leader.index !== -1) {
+          stats[`p${leader.index + 1}Wins`]++;
+          if (leader.score === 100) stats.totalDollars++;
+        } else {
+          stats.totalBusts++; // Rare 3-way bust
+        }
+      }
+
+      console.timeEnd("Execution Time");
+      console.table(stats);
+      return "Test Complete. Check the table above.";
+    };
+
+    return () => { delete window.runStressTest; };
+  }, [WHEEL_VALUES]); // Ensure it updates if your wheel values change
+
   const logAction = useCallback((name, spin, total, status) => {
     setLogs(prev => [
       {
@@ -81,13 +149,35 @@ export default function App() {
     ]);
   }, []);
 
+  const forceDoubleBust = () => {
+    setPlayerScores([105, 110, 0]); // P1 & P2 bust
+
+    // 🚨 CRITICAL: Set P3 as the leader immediately
+    // We use a score of 0.01 or just 0, but the index MUST be 2
+    setLeader({ index: 2, score: 0 });
+
+    setTurn(2);
+    setSpinsThisTurn(0);
+    setGameState("bonus_only");
+
+    logAction("DEBUG", "N/A", "BUST", "P3 WINS BY DEFAULT");
+  };
+
   const advanceTurn = useCallback((currentTurn, currentGameState) => {
-    console.log(`--- ADVANCE TURN DEBUG ---`);
-    console.log(`Current Turn: ${currentTurn}, State: ${currentGameState}`);
+    console.log(`Evaluating end of turn. Current Turn: ${currentTurn}, Game State: ${currentGameState}  `);
     console.log(`Scores:`, playerScores);
 
     const p1Bust = playerScores[0] > 100;
     const p2Bust = playerScores[1] > 100;
+
+    // 🚨 THE P3 VICTORY LAP TRIGGER
+    if (currentTurn === 1 && p1Bust && p2Bust) {
+      setTurn(2);
+      setSpinsThisTurn(0);
+      setGameState("bonus_only"); // This is the key!
+      logAction("SYSTEM", "N/A", "0", "P1 & P2 BUSTED - P3 WINS BY DEFAULT!");
+      return;
+    }
 
     // 1. DOUBLE BUST FAILSAFE
     if (currentTurn === 1 && p1Bust && p2Bust) {
@@ -134,8 +224,8 @@ export default function App() {
     const val = WHEEL_VALUES[index];
     setIsSpinning(false);
 
-    // --- 1. BONUS ROUND ($5k / $10k) ---
-    if (gameState === "bonus_round" || gameState === "bonus_only") {
+    // --- 1. BONUS ROUNDS (Money Spins) ---
+    if (gameState === "bonus_round") {
       let bonusWin = 0;
       if (val === 100) bonusWin = 10000;
       else if (val === 5 || val === 15) bonusWin = 5000;
@@ -148,36 +238,69 @@ export default function App() {
         logAction(PLAYERS[turn].name, val, "BONUS", "No bonus money.");
       }
 
-      // FIX: Use a local variable for the next index to avoid stale state
       const nextBonusIdx = bonusIndex + 1;
       if (nextBonusIdx < bonusEligible.length) {
         setBonusIndex(nextBonusIdx);
         setTurn(bonusEligible[nextBonusIdx]);
       } else {
-        advanceTurn(turn, gameState); // Pass context!
+        setGameState("finished");
       }
       return;
     }
 
-    // --- 2. SPIN-OFF LOGIC ---
+    // --- 2. VICTORY LAP (P3 wins by default) ---
+    if (gameState === "bonus_only") {
+      const isJackpot = val === 100;
+
+      if (isJackpot) {
+        setBank(prev => { const b = [...prev]; b[turn] += 1000; return b; });
+        logAction(PLAYERS[turn].name, val, "WINNER", "🏆 JACKPOT ON THE VICTORY LAP! $1,000!");
+        triggerJackpot();
+      } else {
+        logAction(PLAYERS[turn].name, val, "WINNER", "Victory Lap Complete.");
+      }
+
+      setGameState("finished");
+      return;
+    }
+
+    if (gameState === "bonus_only") {
+      const isJackpot = val === 100;
+
+      if (isJackpot) {
+        setBank(prev => { const b = [...prev]; b[turn] += 1000; return b; });
+        setBonusEligible([turn]); // P3 is now eligible for the Big Money
+        setGameState("bonus_round"); // 🚨 Transition to the $10k/$25k spin!
+        setBonusIndex(0);
+        logAction(PLAYERS[turn].name, val, "WINNER", "💰 JACKPOT! P3 MOVES TO THE BONUS SPIN!");
+        triggerJackpot();
+      } else {
+        logAction(PLAYERS[turn].name, val, "WINNER", "Victory Lap Complete.");
+        setGameState("finished");
+      }
+      return;
+    }
+
+    // --- 3. SPIN-OFF LOGIC ---
     if (gameState === "spin_off") {
       const currentPIndex = spinOffParticipants.indexOf(turn);
       setPlayerScores(prev => { const s = [...prev]; s[turn] = val; return s; });
-      logAction(PLAYERS[turn].name, val, val, "SPIN-OFF SCORE");
+      logAction(PLAYERS[turn].name, val, "TIE-BREAKER", `Shootout Score: ${val}`);
 
       if (currentPIndex < spinOffParticipants.length - 1) {
         setTurn(spinOffParticipants[currentPIndex + 1]);
       } else {
-        advanceTurn(turn, gameState); // Pass context!
+        // Check if we need another spin-off or move to bonus
+        advanceTurn(turn, gameState);
       }
       return;
     }
 
-    // --- 3. REGULAR PLAY LOGIC ---
+    // --- 4. REGULAR PLAY LOGIC ---
+    // We only log regular spins down here now!
     const newScore = playerScores[turn] + val;
     const newSpins = spinsThisTurn + 1;
 
-    // Update Score & Spins (Functional updates are safer)
     setPlayerScores(prev => { const s = [...prev]; s[turn] = newScore; return s; });
     setSpinsThisTurn(newSpins);
 
@@ -187,10 +310,8 @@ export default function App() {
       setBonusEligible(prev => [...prev, turn]);
       logAction(PLAYERS[turn].name, val, 100, "💰 $1,000 WINNER!");
       triggerJackpot();
-
       if (leader.score < 100) setLeader({ index: turn, score: 100 });
-
-      advanceTurn(turn, gameState); // Pass context!
+      advanceTurn(turn, gameState);
       return;
     }
 
@@ -198,38 +319,58 @@ export default function App() {
     if (turn === 2 && newScore > leader.score && newScore <= 100) {
       setLeader({ index: turn, score: newScore });
       logAction(PLAYERS[turn].name, val, newScore, "WINNER!");
-      advanceTurn(turn, gameState); // Pass context!
+      advanceTurn(turn, gameState);
       return;
     }
 
-    // CASE: BUST OR FORCED STAY
+    // CASE: BUST OR STAY
     if (newScore > 100) {
       logAction(PLAYERS[turn].name, val, newScore, "BUSTED");
-      advanceTurn(turn, gameState); // Pass context!
+      advanceTurn(turn, gameState);
     } else if (newSpins === 2) {
       if (newScore > leader.score) setLeader({ index: turn, score: newScore });
       logAction(PLAYERS[turn].name, val, newScore, "STAY");
-      advanceTurn(turn, gameState); // Pass context!
+      advanceTurn(turn, gameState);
     } else {
-      // ONLY TIME WE WAIT
+      // Standard Spin 1 logging
+      logAction(PLAYERS[turn].name, val, newScore, "Spin 1 Complete");
       setIsAwaitingChoice(true);
     }
   };
 
   const spin = () => {
+    console.log('Spinning ...');
     if (isSpinning || gameState === "finished") return;
+    setIsAwaitingChoice(false);
     setTransitionEnabled(true);
     setTimeout(() => {
+
+      //--- Start the spin after a brief delay to ensure CSS transition is applied
       setIsSpinning(true);
+
+      //--- SPIN CALCULATION: Random steps + 5-9 full rotations for drama
+      // 1. Calculate the physics
       const steps = Math.floor(Math.random() * SEGMENTS);
-      const totalRotation = ((Math.floor(Math.random() * 5) + 5) * 360) + (steps * SEGMENT_DEG);
+      const extraLaps = (Math.floor(Math.random() * 5) + 5) * 360;
+      const totalRotation = extraLaps + (steps * SEGMENT_DEG);
+
+      // 2. Calculate the FINAL destination immediately
+      const landedIndex = (topIndex + steps) % SEGMENTS;
+      const landedValue = WHEEL_VALUES[landedIndex];
+
+      console.log(`Spinning ${steps} steps to land on Index ${landedIndex} (Value: ${landedValue})`);
+
+      //--- Apply the rotation to trigger the CSS animation
       setRotation(totalRotation);
+
+      //--- Wait for the animation to complete. This is only for show since we know the result immediately, but it adds suspense.
       setTimeout(() => {
         const landedIndex = (topIndex + steps) % SEGMENTS;
         setTransitionEnabled(false);
         requestAnimationFrame(() => {
           setRotation(0);
           setTopIndex(landedIndex);
+          console.log(`Landed on index ${landedIndex} (Value: ${WHEEL_VALUES[landedIndex]})`);
           setTimeout(() => { processResult(landedIndex); }, 50);
         });
       }, 4000);
@@ -272,8 +413,39 @@ export default function App() {
           <GameControls
             isSpinning={isSpinning} isAwaitingChoice={isAwaitingChoice}
             gameState={gameState} onSpin={spin} onStay={handleStay} onReset={resetGame}
+            players={PLAYERS}
+            turn={turn}
+            leader={leader}
+            bank={bank}
           />
         </div>
+        {/* DEV DEBUG TRAY */}
+        <div className="fixed bottom-4 right-4 flex gap-2 items-center z-50">
+
+          {/* FORCE BONUS BUTTON */}
+          <button
+            onClick={() => {
+              setBonusEligible([0]);
+              setGameState("bonus_round");
+              setTurn(0);
+              setBonusIndex(0);
+              logAction("DEBUG", "N/A", "1.00", "FORCED P1 BONUS ROUND");
+            }}
+            className="p-2 bg-slate-900/80 text-amber-400 text-[10px] uppercase font-bold rounded border border-amber-600/50 hover:bg-amber-900 hover:text-white transition-all opacity-50 hover:opacity-100 cursor-pointer"
+          >
+            ✨ Force P1 Bonus
+          </button>
+
+          {/* FORCE DOUBLE BUST BUTTON */}
+          <button
+            onClick={forceDoubleBust}
+            className="p-2 bg-red-900/80 text-red-200 text-[10px] uppercase font-bold rounded border border-red-500/50 hover:bg-red-800 hover:text-white transition-all opacity-50 hover:opacity-100 cursor-pointer"
+          >
+            ☢️ Force P1/P2 Bust
+          </button>
+
+        </div>
+
         <div className="hidden lg:block lg:w-80" />
       </div>
     </div>
