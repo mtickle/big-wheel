@@ -29,7 +29,7 @@ const GameControls = memo(({
       <div className="flex flex-col items-center gap-6 w-full animate-in fade-in zoom-in duration-500">
         <div className="text-center">
           <div className="text-slate-400 text-xs font-black uppercase tracking-[0.2em] mb-1">
-            {hasWinner ? "Showcase Representative" : "Game Over"}
+            {hasWinner ? "Winner" : "Game Over"}
           </div>
           <div className="text-4xl font-black text-white italic drop-shadow-lg">
             {winnerName}
@@ -39,10 +39,6 @@ const GameControls = memo(({
           {hasWinner && totalWon > 0 ? (
             <div className="mt-2 py-1 px-4 bg-green-500/20 border border-green-500/50 rounded-full text-green-400 font-bold text-sm inline-block animate-bounce">
               💰 TOTAL WINNINGS: ${totalWon.toLocaleString()}
-            </div>
-          ) : hasWinner ? (
-            <div className="mt-2 text-slate-500 italic text-sm">
-              Won the game (and some Mac & Cheese!)
             </div>
           ) : null}
         </div>
@@ -101,16 +97,27 @@ const GameControls = memo(({
   if (gameState === "bonus_round") {
     return (
       <div className="flex flex-col items-center gap-4 w-full animate-in slide-in-from-bottom-4">
-        <div className="text-yellow-400 font-black text-center text-xl tracking-tighter drop-shadow-md uppercase">
-          ✨ {currentPlayerName}: SPIN FOR THE $10,000 BONUS! ✨
-        </div>
+        <div className="text-yellow-400 font-sans text-center text-xl drop-shadow-md">
+          {currentPlayerName}: Spin for the $10,000 bonus!       </div>
         <button
-          onClick={onSpin}
-          disabled={isSpinning}
-          className="w-full max-w-md py-8 bg-linear-to-b from-yellow-400 to-yellow-600 hover:from-yellow-300 hover:to-yellow-500 rounded-2xl text-3xl font-black italic shadow-[0_10px_0_rgb(133,77,14)] active:shadow-none active:translate-y-2 transition-all border-4 border-yellow-200 text-slate-900"
-        >
-          {isSpinning ? "BIG MONEY..." : "BONUS SPIN!"}
-        </button>
+  onClick={onSpin}
+  disabled={isSpinning}
+  className="
+    w-full max-w-md flex flex-col items-center justify-center py-6 
+    bg-linear-to-b from-yellow-400 to-yellow-600 hover:from-yellow-300 hover:to-yellow-500 
+    text-slate-900 border-2 border-yellow-200 rounded-2xl
+    active:shadow-none active:translate-y-2.5 
+    disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0 
+    transition-all duration-75
+  "
+>
+  <span className="text-xs font-bold uppercase tracking-widest text-yellow-900/80 mb-0.5">
+    {currentPlayerName}
+  </span>
+  <span className="text-3xl font-sans leading-none drop-shadow-sm">
+    {isSpinning ? "Spinning..." : "Bonus Spin!"}
+  </span> 
+</button>
       </div>
     );
   }
@@ -119,15 +126,12 @@ const GameControls = memo(({
   if (gameState === "spin_off") {
     return (
       <div className="flex flex-col items-center gap-4 w-full">
-        <div className="text-red-400 font-black uppercase text-sm tracking-[0.3em]">
-          ⚠️ Sudden Death Spin-Off ⚠️
-        </div>
         <button
           onClick={onSpin}
           disabled={isSpinning}
-          className="w-full max-w-md py-6 bg-red-600 hover:bg-red-500 rounded-2xl text-2xl font-black italic shadow-[0_8px_0_rgb(153,27,27)] active:shadow-none active:translate-y-2 transition-all border-2 border-red-400"
+          className="w-full max-w-md py-6 px-8 bg-red-600 hover:bg-red-500 rounded-2xl text-2xl font-sans active:shadow-none active:translate-y-2 transition-all border-2 border-red-400"
         >
-          {isSpinning ? "ELIMINATION SPIN..." : "TIE-BREAKER SPIN!"}
+          {isSpinning ? "Eliminiation Spin..." : "Tie breaker spin!"}
         </button>
       </div>
     );

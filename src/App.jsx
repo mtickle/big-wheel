@@ -164,60 +164,79 @@ export default function App() {
   };
 
   const advanceTurn = useCallback((currentTurn, currentGameState) => {
-    console.log(`Evaluating end of turn. Current Turn: ${currentTurn}, Game State: ${currentGameState}  `);
+    console.log(`Evaluating end of turn. Current Turn: ${currentTurn}, Game State: ${currentGameState}`);
     console.log(`Scores:`, playerScores);
 
     const p1Bust = playerScores[0] > 100;
     const p2Bust = playerScores[1] > 100;
 
-    // 🚨 THE P3 VICTORY LAP TRIGGER
+    // 1. THE P3 VICTORY LAP TRIGGER (Cleaned up duplication)
     if (currentTurn === 1 && p1Bust && p2Bust) {
+      console.log("Triggering P3 Failsafe (P1/P2 Busted)");
+      setLeader({ index: 2, score: 0 }); // 🚨 Ensures P3 is recognized as the winner!
       setTurn(2);
       setSpinsThisTurn(0);
-      setGameState("bonus_only"); // This is the key!
+      setGameState("bonus_only");
       logAction("SYSTEM", "N/A", "0", "P1 & P2 BUSTED - P3 WINS BY DEFAULT!");
       return;
     }
 
-    // 1. DOUBLE BUST FAILSAFE
-    if (currentTurn === 1 && p1Bust && p2Bust) {
-      console.log("Triggering P3 Failsafe (P1/P2 Busted)");
-      setTurn(2);
-      setSpinsThisTurn(0);
-      setGameState("bonus_only");
-      logAction("SYSTEM", "N/A", "0", "P1 & P2 BUSTED - P3 WINS!");
+    // 2. END OF ROUNDS / TIE EVALUATION
+    if (currentTurn === 2 || currentGameState === "spin_off") {
+      console.log("Turn 2/Spin-off finished. Evaluating the true leader...");
+
+      // Map scores to player indices and filter out busts
+      const eligiblePlayers = playerScores
+        .map((score, index) => ({ index, score }))
+        .filter(p => p.score > 0 && p.score <= 100);
+
+      // Failsafe: Rare 3-way bust
+      if (eligiblePlayers.length === 0) {
+        setLeader({ index: -1, score: 0 });
+        setGameState("finished");
+        return;
+      }
+
+      // Find the true highest score and who has it
+      const winningScore = Math.max(...eligiblePlayers.map(p => p.score));
+      const topPlayers = eligiblePlayers.filter(p => p.score === winningScore);
+
+      if (currentGameState !== "spin_off" && topPlayers.length > 1) {
+        console.log("True Tie Detected for First Place! Entering Spin-off.");
+        setLeader({ index: -1, score: winningScore }); // No winner yet
+        setGameState("spin_off");
+
+        // Update participants and turn to the first tied player
+        const tiedIndices = topPlayers.map(p => p.index);
+        setSpinOffParticipants(tiedIndices);
+        setTurn(tiedIndices[0]);
+        setSpinsThisTurn(0);
+      } else {
+        // WE HAVE A CLEAR WINNER
+        const winner = topPlayers[0];
+        console.log(`Clear winner: P${winner.index + 1} with ${winningScore}`);
+        setLeader({ index: winner.index, score: winningScore });
+
+        // Check if they earned a bonus spin (hit exactly 1.00)
+        if (currentGameState !== "bonus_round" && bonusEligible.length > 0) {
+          console.log("Bonus Eligible players found. Entering Bonus Round.");
+          setGameState("bonus_round");
+          setBonusIndex(0);
+          setTurn(bonusEligible[0]);
+        } else {
+          console.log("Game over. Setting finished state.");
+          setGameState("finished");
+        }
+      }
       return;
     }
 
-    // 2. END OF ROUNDS
-    if (currentTurn === 2 || currentGameState === "bonus_only" || currentGameState === "spin_off") {
-      console.log("Turn 2/Special Round finished. Checking for Ties/Bonus...");
-      const validScores = playerScores.filter(s => s <= 100);
-      const maxScore = Math.max(...validScores, 0);
-      const winners = playerScores.map((s, i) => s === maxScore ? i : -1).filter(i => i !== -1);
-
-      if (currentGameState !== "spin_off" && winners.length > 1 && maxScore > 0) {
-        console.log("Tie Detected! Entering Spin-off.");
-        setGameState("spin_off");
-        setSpinOffParticipants(winners);
-        setTurn(winners[0]);
-      } else if (currentGameState !== "bonus_round" && bonusEligible.length > 0) {
-        console.log("Bonus Eligible players found. Entering Bonus Round.");
-        setGameState("bonus_round");
-        setBonusIndex(0);
-        setTurn(bonusEligible[0]);
-      } else {
-        console.log("Game over. Setting finished state.");
-        setGameState("finished");
-      }
-    }
     // 3. THE NORMAL ADVANCE
-    else {
-      const nextTurn = currentTurn + 1;
-      console.log(`Normal advance: Moving from ${currentTurn} to ${nextTurn}`);
-      setTurn(nextTurn);
-      setSpinsThisTurn(0);
-    }
+    const nextTurn = currentTurn + 1;
+    console.log(`Normal advance: Moving from ${currentTurn} to ${nextTurn}`);
+    setTurn(nextTurn);
+    setSpinsThisTurn(0);
+
   }, [playerScores, bonusEligible, logAction]);
 
   const processResult = (index) => {
