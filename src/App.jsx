@@ -4,7 +4,8 @@ import GameControls from "./components/GameControls";
 import GameLogs from "./components/GameLogs";
 import Scoreboard from "./components/Scoreboard";
 import Wheel from "./components/Wheel";
-import { loadFromStorage, saveToStorage } from './utils/storageUtils';
+import { loadFromStorage, saveThingsToDatabase, saveToStorage } from './utils/storageUtils';
+
 
 const WHEEL_VALUES = [
   100, 15, 80, 35, 60, 20, 40, 75, 55, 95,
@@ -269,6 +270,7 @@ export default function App() {
     const val = WHEEL_VALUES[index];
     setIsSpinning(false);
 
+    // Track raw spins for the database payload
     setSpinHistory(prev => ({
       ...prev,
       [turn]: [...prev[turn], val]
@@ -316,10 +318,10 @@ export default function App() {
       return;
     }
 
-    // --- 3. SPIN-OFF LOGIC ---
+    // --- 3. SPIN-OFF LOGIC (The 1-in-8000 Glitch Fix!) ---
     if (gameState === "spin_off") {
-      // 1. Is this ALSO a Bonus Spin? (Did they tie at 1.00?)
       const isBonusSpin = bonusEligible.includes(turn);
+      let nextBonusEligible = [...bonusEligible];
 
       if (isBonusSpin) {
         if (val === 5 || val === 15) {
@@ -331,17 +333,19 @@ export default function App() {
           logAction(PLAYERS[turn]?.name || `P${turn + 1}`, val, "JACKPOT", "🚨 DOUBLE DOLLAR! +$10,000!");
           triggerJackpot();
         }
+
+        // 🚨 Cross their name off the VIP list so they don't get an illegal 3rd spin!
+        nextBonusEligible = nextBonusEligible.filter(idx => idx !== turn);
+        setBonusEligible(nextBonusEligible);
       }
 
-      // 2. OVERWRITE the score on the scoreboard (Do not add!)
-      setPlayerScores(prev => {
-        const newScores = [...prev];
-        newScores[turn] = val; // P1's 100 becomes 15. P3's 100 becomes 45.
-        return newScores;
-      });
+      // OVERWRITE the score on the scoreboard (Do not add!)
+      const nextScores = [...playerScores];
+      nextScores[turn] = val; // e.g., P1's 100 becomes 15
+      setPlayerScores(nextScores);
 
-      // 3. Move to the next player or evaluate the winner
-      advanceTurn(turn, "spin_off");
+      // Pass the instant overrides so advanceTurn knows the exact state
+      advanceTurn(turn, "spin_off", nextScores, nextBonusEligible);
       return;
     }
 
@@ -349,7 +353,7 @@ export default function App() {
     const newScore = playerScores[turn] + val;
     const newSpins = spinsThisTurn + 1;
 
-    // 🚨 Create local copies so we can pass them instantly to advanceTurn!
+    // Create local copies to pass instantly to advanceTurn
     const nextScores = [...playerScores];
     nextScores[turn] = newScore;
     const nextBonusEligible = newScore === 100 ? [...bonusEligible, turn] : bonusEligible;
@@ -487,6 +491,24 @@ export default function App() {
       saveToStorage("showdown_batch", existingBatch);
 
       console.log(`✅ Saved Game ${newGamePayload.gameId}! Total in batch: ${existingBatch.length}`);
+
+      const BATCH_LIMIT = 3;
+
+      if (existingBatch.length >= BATCH_LIMIT) {
+        console.log(`📦 Batch limit of ${BATCH_LIMIT} reached. Preparing transmission...`);
+
+        saveThingsToDatabase('postShowdownGames', existingBatch).then((response) => {
+          // If response exists, the fetch succeeded and didn't throw an error
+          if (response) {
+            // WIPE IT CLEAN! The database has it now.
+            saveToStorage("showdown_batch", []);
+            console.log("🧹 Local storage batch cleared. Server says:", response.message);
+          } else {
+            console.warn("⚠️ API failed. Keeping data in local storage to try again later.");
+          }
+        });
+
+      }
 
       // 🚨 OPTIONAL: The API Trigger
       // if (existingBatch.length >= 10) {
