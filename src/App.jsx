@@ -437,10 +437,18 @@ export default function App() {
   };
 
   const handleStay = () => {
-    const currentScore = playerScores[turn];
-    if (currentScore > leader.score) setLeader({ index: turn, score: currentScore });
     setIsAwaitingChoice(false);
-    advanceTurn(turn, gameState); // Pass the values explicitly!
+
+    // 🚨 THE FIX: Ensure the leader state is updated before passing the turn!
+    setLeader(prevLeader => {
+      const currentScore = playerScores[turn];
+      return currentScore > prevLeader.score
+        ? { index: turn, score: currentScore }
+        : prevLeader;
+    });
+
+    // Pass the turn to the next player
+    advanceTurn(turn, gameState);
   };
 
   const resetGame = () => {
@@ -522,6 +530,7 @@ export default function App() {
   }, [gameState]); // ONLY run this when the game state changes
 
   // --- AUTO-PLAY BOT ---
+  // --- AUTO-PLAY BOT ---
   useEffect(() => {
     // 1. Only run if Auto-Play is ON and the Wheel is NOT currently spinning
     if (!isAutoPlaying || isSpinning) return;
@@ -543,17 +552,34 @@ export default function App() {
         const currentScore = playerScores[turn];
         let shouldStay = false;
 
+        // 🚨 Calculate the true target score based ONLY on previous players
+        let targetScore = 0;
+        if (turn === 1) {
+          // P2 only cares about P1's score
+          targetScore = playerScores[0] > 100 ? 0 : playerScores[0];
+        } else if (turn === 2) {
+          // P3 cares about the highest score between P1 and P2
+          targetScore = Math.max(
+            playerScores[0] > 100 ? 0 : playerScores[0],
+            playerScores[1] > 100 ? 0 : playerScores[1]
+          );
+        }
+
+        const p1Busted = playerScores[0] > 100;
+        const p2Busted = playerScores[1] > 100;
+
         if (turn === 0) {
-          // Player 1 Strategy: Stay on 65 or higher
           shouldStay = currentScore >= 65;
+        } else if (turn === 2 && p1Busted && p2Busted) {
+          shouldStay = currentScore === 100;
         } else {
-          // Player 2 & 3 Strategy: 
-          if (currentScore > leader.score) {
-            shouldStay = true; // Beating the leader = Stay
-          } else if (currentScore === leader.score) {
-            shouldStay = currentScore >= 75; // Tie? Stay if it's high, spin if it's low
+          // 🚨 Use targetScore instead of leader.score!
+          if (currentScore > targetScore) {
+            shouldStay = true;
+          } else if (currentScore === targetScore) {
+            shouldStay = currentScore >= 75;
           } else {
-            shouldStay = false; // Losing? Must spin.
+            shouldStay = false;
           }
         }
 
