@@ -451,6 +451,8 @@ export default function App() {
     setSpinOffParticipants([]);
   };
 
+
+
   // --- ANALYTICS PACKAGER ---
   useEffect(() => {
     if (gameState === "finished") {
@@ -492,7 +494,7 @@ export default function App() {
 
       console.log(`✅ Saved Game ${newGamePayload.gameId}! Total in batch: ${existingBatch.length}`);
 
-      const BATCH_LIMIT = 3;
+      const BATCH_LIMIT = 10;
 
       if (existingBatch.length >= BATCH_LIMIT) {
         console.log(`📦 Batch limit of ${BATCH_LIMIT} reached. Preparing transmission...`);
@@ -581,9 +583,14 @@ export default function App() {
       <div className="max-w-350 mx-auto flex flex-col lg:flex-row gap-16 items-start justify-center">
         <div className="w-full lg:w-80 space-y-6 shrink-0">
           <Scoreboard
-            players={PLAYERS} playerScores={playerScores} bank={bank}
-            turn={turn} leader={leader} gameState={gameState}
+            players={PLAYERS}
+            playerScores={playerScores}
+            bank={bank}
+            turn={turn}
+            leader={leader}
+            gameState={gameState}
             bonusEligible={bonusEligible}
+            isAwaitingChoice={isAwaitingChoice}
           />
           <GameLogs logs={logs} />
         </div>
