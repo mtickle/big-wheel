@@ -167,25 +167,15 @@ export default function App() {
     logAction("DEBUG", "N/A", "BUST", "P3 WINS BY DEFAULT");
   };
 
-  const advanceTurn = useCallback((currentTurn, currentGameState) => {
-    console.log(`Evaluating end of turn. Current Turn: ${currentTurn}, Game State: ${currentGameState}`);
-    console.log(`Scores:`, playerScores);
+  const advanceTurn = useCallback((currentTurn, currentGameState, overrideScores = null, overrideBonus = null) => {
+    // 🚨 1. USE INSTANT OVERRIDES TO PREVENT STALE STATE BUGS
+    const currentScores = overrideScores || playerScores;
+    const currentBonus = overrideBonus || bonusEligible;
 
-    const p1Bust = playerScores[0] > 100;
-    const p2Bust = playerScores[1] > 100;
+    //console.log(`Evaluating end of turn. Current Turn: ${currentTurn}, Game State: ${currentGameState}`);
+    //console.log(`Scores:`, currentScores);
 
-    // 1. THE P3 VICTORY LAP TRIGGER
-    if (currentTurn === 1 && p1Bust && p2Bust) {
-      console.log("Triggering P3 Failsafe (P1/P2 Busted)");
-      setLeader({ index: 2, score: 0 }); // 🚨 Ensures P3 is recognized as the winner!
-      setTurn(2);
-      setSpinsThisTurn(0);
-      setGameState("bonus_only");
-      logAction("SYSTEM", "N/A", "0", "P1 & P2 BUSTED - P3 WINS BY DEFAULT!");
-      return;
-    }
-
-    // 2. EXPLICIT SPIN-OFF CYCLE (Pass the turn to the next tied player)
+    // 1. EXPLICIT SPIN-OFF CYCLE (Pass the turn to the next tied player)
     if (currentGameState === "spin_off") {
       const currentIndexInSpinOff = spinOffParticipants.indexOf(currentTurn);
       const nextPlayerIndex = spinOffParticipants[currentIndexInSpinOff + 1];
@@ -197,22 +187,43 @@ export default function App() {
         setSpinsThisTurn(0);
         return; // Stop here, wait for their spin
       }
-      // If undefined, everyone in the tie has spun. 
-      // Let it fall through to Step 3 to evaluate the winner!
     }
 
-    // 3. END OF ROUNDS / TIE EVALUATION
+    // 2. END OF ROUNDS / TIE EVALUATION
     if (currentTurn === 2 || currentGameState === "spin_off") {
       console.log("Rounds complete. Evaluating the true leader...");
+
+      const p1Bust = currentScores[0] > 100;
+      const p2Bust = currentScores[1] > 100;
+
+      // 🚨 THE NEW P3 IMMUNITY CHECK: Did P1 and P2 Bust?
+      if (currentGameState !== "spin_off" && p1Bust && p2Bust) {
+        console.log("P1 & P2 Busted. P3 wins by default!");
+
+        // P3 wins unconditionally. Even if they busted, they go to the Showcase!
+        setLeader({ index: 2, score: currentScores[2] });
+
+        // Did P3 happen to hit the 1.00 bonus while taking their free spins?
+        if (currentGameState !== "bonus_round" && currentBonus.includes(2)) {
+          console.log("P3 earned a bonus spin during their victory lap!");
+          setGameState("bonus_round");
+          setBonusIndex(0);
+          setTurn(2);
+        } else {
+          setGameState("finished");
+        }
+        return;
+      }
 
       // Determine who we are evaluating (Everyone normally, or just the tied players in a spin-off)
       let eligiblePlayers = [];
       if (currentGameState === "spin_off") {
         eligiblePlayers = spinOffParticipants
-          .map(index => ({ index: index, score: playerScores[index] }))
-          .filter(p => p.score <= 100); // Filter out busts during the spin-off
+          .map(index => ({ index: index, score: currentScores[index] })) // 🚨 Use currentScores!
+          .filter(p => p.score <= 100);
       } else {
-        eligiblePlayers = playerScores
+        // 🚨 Use currentScores instead of playerScores here too!
+        eligiblePlayers = currentScores
           .map((score, index) => ({ index, score }))
           .filter(p => p.score > 0 && p.score <= 100);
       }
@@ -244,23 +255,22 @@ export default function App() {
         console.log(`Clear winner: P${winner.index + 1} with ${winningScore}`);
         setLeader({ index: winner.index, score: winningScore });
 
-        // Check if the WINNER earned a bonus spin
-        if (currentGameState !== "bonus_round" && bonusEligible.includes(winner.index)) {
+        // Check if the WINNER earned a bonus spin (using currentBonus override)
+        if (currentGameState !== "bonus_round" && currentBonus.includes(winner.index)) {
           console.log("Winner is Bonus Eligible! Entering Bonus Round.");
           setGameState("bonus_round");
           setBonusIndex(0);
           setTurn(winner.index);
         } else {
-          console.log("Game over. Setting finished state.");
+          //console.log("Game over. Setting finished state.");
           setGameState("finished");
         }
       }
       return;
     }
 
-    // 4. THE NORMAL ADVANCE
+    // 3. THE NORMAL ADVANCE
     const nextTurn = currentTurn + 1;
-    //console.log(`Normal advance: Moving from ${currentTurn} to ${nextTurn}`);
     setTurn(nextTurn);
     setSpinsThisTurn(0);
 
@@ -429,7 +439,7 @@ export default function App() {
         requestAnimationFrame(() => {
           setRotation(0);
           setTopIndex(landedIndex);
-          console.log(`Landed on index ${landedIndex} (Value: ${WHEEL_VALUES[landedIndex]})`);
+          //console.log(`Landed on index ${landedIndex} (Value: ${WHEEL_VALUES[landedIndex]})`);
           setTimeout(() => { processResult(landedIndex); }, 50);
         });
       }, 4000);
@@ -457,9 +467,11 @@ export default function App() {
     setLogs([]); setRotation(0); setTopIndex(0);
     setBank([0, 0, 0]); setBonusEligible([]); setBonusIndex(0);
     setSpinOffParticipants([]);
+
+    // Wipe the historical arrays for the next game
+    setSpinHistory({ 0: [], 1: [], 2: [] });
+    setSpinOffParticipants([]);
   };
-
-
 
   // --- ANALYTICS PACKAGER ---
   useEffect(() => {
@@ -471,9 +483,9 @@ export default function App() {
 
       // 2. Determine macro stats
       const isDoubleBust = playerScores[0] > 100 && playerScores[1] > 100;
-      // If you are tracking spinOffParticipants in state, check its length. 
-      // Otherwise, you can check if anyone's spinHistory has more than 2 spins.
-      const wentToSpinOff = Object.values(spinHistory).some(spins => spins.length >= 3);
+
+      // Use the actual state array, NOT the spin count, to avoid the Bonus Spin trap!
+      const wentToSpinOff = spinOffParticipants.length > 0;
 
       // 3. Build the Payload
       const newGamePayload = {
@@ -496,13 +508,14 @@ export default function App() {
         })
       };
 
+      console.log("New Game Payload:", newGamePayload);
+
       // 4. Save back to storage
       existingBatch.push(newGamePayload);
       saveToStorage("showdown_batch", existingBatch);
+      console.log(`Saved Game ${newGamePayload.gameId}. Total in batch: ${existingBatch.length}`);
 
-      console.log(`✅ Saved Game ${newGamePayload.gameId}! Total in batch: ${existingBatch.length}`);
-
-      const BATCH_LIMIT = 10;
+      const BATCH_LIMIT = 20;
 
       if (existingBatch.length >= BATCH_LIMIT) {
         console.log(`📦 Batch limit of ${BATCH_LIMIT} reached. Preparing transmission...`);
@@ -517,19 +530,12 @@ export default function App() {
             console.warn("⚠️ API failed. Keeping data in local storage to try again later.");
           }
         });
-
       }
-
-      // 🚨 OPTIONAL: The API Trigger
-      // if (existingBatch.length >= 10) {
-      //   console.log("🚀 Batch of 10 reached! Sending to Postgres API...");
-      //   // sendBatchToApi(existingBatch);
-      //   // saveToStorage("showdown_batch", []); // Clear local storage after sending
-      // }
     }
-  }, [gameState]); // ONLY run this when the game state changes
+  }, [gameState, leader, playerScores, spinOffParticipants, spinHistory, bank]);// ONLY run this when the game state changes
 
-  // --- AUTO-PLAY BOT ---
+
+
   // --- AUTO-PLAY BOT ---
   useEffect(() => {
     // 1. Only run if Auto-Play is ON and the Wheel is NOT currently spinning

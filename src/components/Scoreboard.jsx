@@ -65,7 +65,7 @@ const Scoreboard = memo(({ players, playerScores, bank, turn, leader, gameState,
                         : "text-green-400"
                       }`}
                   >
-                    {isBusted ? "BUST" : isTheDollar ? "1.00" : playerScores[i]}
+                    {isBusted ? "OVER" : isTheDollar ? "1.00" : playerScores[i]}
                   </span>
                 </div>
               </div>
