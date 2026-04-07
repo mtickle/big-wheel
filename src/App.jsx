@@ -28,6 +28,8 @@ export default function App() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [transitionEnabled, setTransitionEnabled] = useState(true);
   const [isAwaitingChoice, setIsAwaitingChoice] = useState(false);
+  const [isTurboMode, setIsTurboMode] = useState(false);
+  const [isTransmitting, setIsTransmitting] = useState(false);
 
   // --- GAME STATE ---
   const [turn, setTurn] = useState(0);
@@ -47,6 +49,7 @@ export default function App() {
 
   // --- CONFETTI CANNON ---
   const triggerJackpot = useCallback(() => {
+    if (isTurboMode) return;
     const end = Date.now() + 3 * 1000;
     const colors = ["#fbbf24", "#ffffff", "#22c55e"];
 
@@ -70,7 +73,7 @@ export default function App() {
         requestAnimationFrame(frame);
       }
     }());
-  }, []);
+  }, [isTurboMode]);
 
   //--- STRESS TEST FUNCTION (EXPOSED TO WINDOW FOR EASY DEBUGGING)
   useEffect(() => {
@@ -412,6 +415,16 @@ export default function App() {
     if (isSpinning || gameState === "finished") return;
     setIsAwaitingChoice(false);
     setTransitionEnabled(true);
+
+    // 🚨 THE TURBO BYPASS
+    if (isAutoPlaying && isTurboMode) {
+      setIsAwaitingChoice(false);
+      const destinationIndex = Math.floor(Math.random() * SEGMENTS);
+      setTopIndex(destinationIndex);
+      processResult(destinationIndex);
+      return;
+    }
+
     setTimeout(() => {
 
       //--- Start the spin after a brief delay to ensure CSS transition is applied
@@ -515,34 +528,39 @@ export default function App() {
       saveToStorage("showdown_batch", existingBatch);
       console.log(`Saved Game ${newGamePayload.gameId}. Total in batch: ${existingBatch.length}`);
 
-      const BATCH_LIMIT = 20;
+      const BATCH_LIMIT = 200;
 
       if (existingBatch.length >= BATCH_LIMIT) {
         console.log(`📦 Batch limit of ${BATCH_LIMIT} reached. Preparing transmission...`);
 
+        // 🚨 1. PRESS THE BRAKES
+        setIsTransmitting(true);
+
+        // Wipe local storage immediately so the next game starts fresh
+        saveToStorage("showdown_batch", []);
+
+        // Send the payload to Postgres
         saveThingsToDatabase('postShowdownGames', existingBatch).then((response) => {
-          // If response exists, the fetch succeeded and didn't throw an error
           if (response) {
-            // WIPE IT CLEAN! The database has it now.
-            saveToStorage("showdown_batch", []);
-            console.log("🧹 Local storage batch cleared. Server says:", response.message);
+            console.log("✅ Server successfully accepted the batch!");
           } else {
-            console.warn("⚠️ API failed. Keeping data in local storage to try again later.");
+            console.warn("⚠️ API failed to respond properly.");
           }
+
+          // 🚨 2. RELEASE THE BRAKES
+          setIsTransmitting(false);
         });
       }
     }
-  }, [gameState, leader, playerScores, spinOffParticipants, spinHistory, bank]);// ONLY run this when the game state changes
-
-
+  }, [isAutoPlaying, isTurboMode, isTransmitting, isSpinning, gameState, isAwaitingChoice, turn, playerScores, leader, spin, handleStay, resetGame]);// ONLY run this when the game state changes
 
   // --- AUTO-PLAY BOT ---
   useEffect(() => {
     // 1. Only run if Auto-Play is ON and the Wheel is NOT currently spinning
-    if (!isAutoPlaying || isSpinning) return;
+    if (!isAutoPlaying || isSpinning || isTransmitting) return;
 
     // 2. Add a visual delay so you can actually watch the game unfold
-    const actionDelay = 1500; // 1.5 seconds
+    const actionDelay = isTurboMode ? 10 : 1500;
 
     const autoTimer = setTimeout(() => {
 
@@ -603,12 +621,13 @@ export default function App() {
       console.log(`[BOT] P${turn + 1} takes mandatory spin.`);
       spin();
 
+
     }, actionDelay);
 
     // Cleanup the timer if state changes before it fires
     return () => clearTimeout(autoTimer);
 
-  }, [isAutoPlaying, isSpinning, gameState, isAwaitingChoice, turn, playerScores, leader, spin, handleStay, resetGame]);
+  }, [isAutoPlaying, isTurboMode, isTransmitting, isSpinning, gameState, isAwaitingChoice, turn, playerScores, leader, spin, handleStay, resetGame]);
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-8 font-sans overflow-x-hidden">
@@ -648,7 +667,16 @@ export default function App() {
         </div>
         {/* DEV DEBUG TRAY */}
         <div className="fixed bottom-4 right-4 flex gap-2 items-center z-50">
-
+          <input
+            type="checkbox"
+            id="turboMode"
+            checked={isTurboMode}
+            onChange={(e) => setIsTurboMode(e.target.checked)}
+            className="w-4 h-4 text-yellow-500 bg-slate-900 border-slate-600 rounded focus:ring-yellow-500 focus:ring-2 cursor-pointer"
+          />
+          <label htmlFor="turboMode" className="text-sm font-mono text-slate-300 cursor-pointer select-none">
+            🚀 TURBO MODE
+          </label>
           <button
             onClick={() => setIsAutoPlaying(prev => !prev)}
             className={`p-2 text-[10px] uppercase font-bold rounded border transition-all cursor-pointer ${isAutoPlaying
