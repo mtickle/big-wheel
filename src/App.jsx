@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import GameControls from "./components/GameControls";
 import GameLogs from "./components/GameLogs";
 import Scoreboard from "./components/Scoreboard";
+import StudioAnalytics from "./components/StudioAnalytics";
 import Wheel from "./components/Wheel";
 import { loadFromStorage, saveThingsToDatabase, saveToStorage } from './utils/storageUtils';
 
@@ -630,89 +631,102 @@ export default function App() {
   }, [isAutoPlaying, isTurboMode, isTransmitting, isSpinning, gameState, isAwaitingChoice, turn, playerScores, leader, spin, handleStay, resetGame]);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-8 font-sans overflow-x-hidden">
-      <div className="max-w-350 mx-auto flex flex-col lg:flex-row gap-16 items-start justify-center">
-        <div className="w-full lg:w-80 space-y-6 shrink-0">
-          <Scoreboard
-            players={PLAYERS}
-            playerScores={playerScores}
-            bank={bank}
-            turn={turn}
-            leader={leader}
-            gameState={gameState}
-            bonusEligible={bonusEligible}
-            isAwaitingChoice={isAwaitingChoice}
-          />
-          <GameLogs logs={logs} />
-        </div>
+    <div className="min-h-screen bg-slate-900 text-white p-8 font-sans overflow-x-hidden relative">
 
-        <div className="flex-1 flex flex-col items-center justify-center space-y-12">
-          <Wheel
-            rotation={rotation} topIndex={topIndex}
-            transitionEnabled={transitionEnabled} size={500}
-            wheelValues={WHEEL_VALUES} isSpinning={isSpinning}
-          />
-          <GameControls
-            isSpinning={isSpinning}
-            isAwaitingChoice={isAwaitingChoice}
-            gameState={gameState}
-            onSpin={spin}
-            onStay={handleStay}
-            onReset={resetGame}
-            players={PLAYERS}
-            turn={turn}
-            leader={leader}
-            bank={bank}
-          />
-        </div>
-        {/* DEV DEBUG TRAY */}
-        <div className="fixed bottom-4 right-4 flex gap-2 items-center z-50">
-          <input
-            type="checkbox"
-            id="turboMode"
-            checked={isTurboMode}
-            onChange={(e) => setIsTurboMode(e.target.checked)}
-            className="w-4 h-4 text-yellow-500 bg-slate-900 border-slate-600 rounded focus:ring-yellow-500 focus:ring-2 cursor-pointer"
-          />
-          <label htmlFor="turboMode" className="text-sm font-mono text-slate-300 cursor-pointer select-none">
-            🚀 TURBO MODE
-          </label>
-          <button
-            onClick={() => setIsAutoPlaying(prev => !prev)}
-            className={`p-2 text-[10px] uppercase font-bold rounded border transition-all cursor-pointer ${isAutoPlaying
-              ? 'bg-emerald-900/80 text-emerald-200 border-emerald-500 hover:bg-emerald-800'
-              : 'bg-slate-900/80 text-slate-400 border-slate-600/50 hover:bg-slate-800 hover:text-white'
-              }`}
-          >
-            {isAutoPlaying ? "🛑 Stop Auto" : "🤖 Start Auto"}
-          </button>
+      {/* 🚨 THE MASTER GRID CONTAINER */}
+      <div className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-16 items-start">
 
-          {/* FORCE BONUS BUTTON */}
-          <button
-            onClick={() => {
-              setBonusEligible([0]);
-              setGameState("bonus_round");
-              setTurn(0);
-              setBonusIndex(0);
-              logAction("DEBUG", "N/A", "1.00", "FORCED P1 BONUS ROUND");
-            }}
-            className="p-2 bg-slate-900/80 text-amber-400 text-[10px] uppercase font-bold rounded border border-amber-600/50 hover:bg-amber-900 hover:text-white transition-all opacity-50 hover:opacity-100 cursor-pointer"
-          >
-            ✨ Force P1 Bonus
-          </button>
+          {/* --- ROW 1, COLUMN 1: Scoreboard & Logs --- */}
+          <div className="w-full space-y-6">
+            <Scoreboard
+              players={PLAYERS}
+              playerScores={playerScores}
+              bank={bank}
+              turn={turn}
+              leader={leader}
+              gameState={gameState}
+              bonusEligible={bonusEligible}
+              isAwaitingChoice={isAwaitingChoice}
+            />
+            <GameLogs logs={logs} />
+          </div>
 
-          {/* FORCE DOUBLE BUST BUTTON */}
-          <button
-            onClick={forceDoubleBust}
-            className="p-2 bg-red-900/80 text-red-200 text-[10px] uppercase font-bold rounded border border-red-500/50 hover:bg-red-800 hover:text-white transition-all opacity-50 hover:opacity-100 cursor-pointer"
-          >
-            ☢️ Force P1/P2 Bust
-          </button>
+          {/* --- ROW 1, COLUMN 2: Wheel & Controls --- */}
+          <div className="w-full flex flex-col items-center justify-start space-y-12 pt-4">
+            <Wheel
+              rotation={rotation} topIndex={topIndex}
+              transitionEnabled={transitionEnabled} size={500}
+              wheelValues={WHEEL_VALUES} isSpinning={isSpinning}
+            />
+            <GameControls
+              isSpinning={isSpinning}
+              isAwaitingChoice={isAwaitingChoice}
+              gameState={gameState}
+              onSpin={spin}
+              onStay={handleStay}
+              onReset={resetGame}
+              players={PLAYERS}
+              turn={turn}
+              leader={leader}
+              bank={bank}
+            />
+          </div>
+
+          {/* --- ROW 2, COLSPAN 2: Analytics Dashboard --- */}
+          <div className="lg:col-span-2 w-full pt-8 border-t border-slate-700/50">
+            <StudioAnalytics />
+          </div>
 
         </div>
-
-        <div className="hidden lg:block lg:w-80" />
       </div>
+
+      {/* --- DEV DEBUG TRAY (Floats over everything) --- */}
+      <div className="fixed bottom-4 right-4 flex gap-2 items-center z-50 bg-slate-900/90 p-2 rounded-lg shadow-2xl border border-slate-700/50 backdrop-blur-sm">
+        <input
+          type="checkbox"
+          id="turboMode"
+          checked={isTurboMode}
+          onChange={(e) => setIsTurboMode(e.target.checked)}
+          className="w-4 h-4 text-yellow-500 bg-slate-900 border-slate-600 rounded focus:ring-yellow-500 focus:ring-2 cursor-pointer"
+        />
+        <label htmlFor="turboMode" className="text-sm font-mono text-slate-300 cursor-pointer select-none">
+          🚀 TURBO MODE
+        </label>
+
+        <button
+          onClick={() => setIsAutoPlaying(prev => !prev)}
+          className={`ml-2 p-2 text-[10px] uppercase font-bold rounded border transition-all cursor-pointer ${isAutoPlaying
+            ? 'bg-emerald-900/80 text-emerald-200 border-emerald-500 hover:bg-emerald-800'
+            : 'bg-slate-900/80 text-slate-400 border-slate-600/50 hover:bg-slate-800 hover:text-white'
+            }`}
+        >
+          {isAutoPlaying ? "🛑 Stop Auto" : "🤖 Start Auto"}
+        </button>
+
+        {/* FORCE BONUS BUTTON */}
+        <button
+          onClick={() => {
+            setBonusEligible([0]);
+            setGameState("bonus_round");
+            setTurn(0);
+            setBonusIndex(0);
+            logAction("DEBUG", "N/A", "1.00", "FORCED P1 BONUS ROUND");
+          }}
+          className="p-2 bg-slate-900/80 text-amber-400 text-[10px] uppercase font-bold rounded border border-amber-600/50 hover:bg-amber-900 hover:text-white transition-all opacity-50 hover:opacity-100 cursor-pointer"
+        >
+          ✨ Force P1 Bonus
+        </button>
+
+        {/* FORCE DOUBLE BUST BUTTON */}
+        <button
+          onClick={forceDoubleBust}
+          className="p-2 bg-red-900/80 text-red-200 text-[10px] uppercase font-bold rounded border border-red-500/50 hover:bg-red-800 hover:text-white transition-all opacity-50 hover:opacity-100 cursor-pointer"
+        >
+          ☢️ Force P1/P2 Bust
+        </button>
+      </div>
+
     </div>
   );
 }
