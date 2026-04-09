@@ -64,22 +64,24 @@ const StudioAnalytics = () => {
     if (!stats) return <div className="text-slate-400 text-center p-4">Awaiting game data...</div>;
 
     return (
-        <div className="w-full max-w-5xl mx-auto mt-8 p-6 bg-slate-900 border-t-4 border-slate-700 text-slate-100 rounded-b-xl shadow-2xl">
-            <h2 className="text-2xl font-bold mb-6 text-slate-300 uppercase tracking-widest">Studio Analytics</h2>
+        <div className="bg-slate-800/40 p-5 rounded-2xl border-2 border-slate-700 flex flex-col w-full">
+            <h3 className="text-sm font-sans text-slate-500 uppercase tracking-widest mb-3 px-1 flex justify-between">
+                Analytics
+            </h3>
 
             {/* --- KPI CARDS --- */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 text-center shadow-inner">
-                    <p className="text-sm text-slate-400 uppercase tracking-wider mb-1">Total Games</p>
-                    <p className="text-4xl font-mono text-blue-400">{stats.total.toLocaleString()}</p>
+                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Total&nbsp;Games</p>
+                    <p className="text-2xl font-mono text-blue-400">{stats.total.toLocaleString()}</p>
                 </div>
                 <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 text-center shadow-inner">
-                    <p className="text-sm text-slate-400 uppercase tracking-wider mb-1">Bonus Cash</p>
-                    <p className="text-4xl font-mono text-green-400">${stats.totalBonusCash.toLocaleString()}</p>
+                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Bonus&nbsp;Cash</p>
+                    <p className="text-2xl font-mono text-green-400">${stats.totalBonusCash.toLocaleString()}</p>
                 </div>
                 <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 text-center shadow-inner">
-                    <p className="text-sm text-slate-400 uppercase tracking-wider mb-1">Perfect Games (1.00)</p>
-                    <p className="text-4xl font-mono text-yellow-400">{stats.perfectGames.toLocaleString()}</p>
+                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Perfect&nbsp;Games</p>
+                    <p className="text-2xl font-mono text-yellow-400">{stats.perfectGames.toLocaleString()}</p>
                 </div>
             </div>
 

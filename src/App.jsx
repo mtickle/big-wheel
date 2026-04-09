@@ -338,6 +338,7 @@ export default function App() {
       let nextBonusEligible = [...bonusEligible];
 
       if (isBonusSpin) {
+        // They tied at 1.00 previously, so this spin-off IS their Bonus Spin
         if (val === 5 || val === 15) {
           setBank(prev => { const b = [...prev]; b[turn] += 5000; return b; });
           logAction(PLAYERS[turn]?.name || `P${turn + 1}`, val, "BONUS", "💰 HIT A GREEN SECTION! +$5,000!");
@@ -350,8 +351,19 @@ export default function App() {
 
         // 🚨 Cross their name off the VIP list so they don't get an illegal 3rd spin!
         nextBonusEligible = nextBonusEligible.filter(idx => idx !== turn);
-        setBonusEligible(nextBonusEligible);
+
+      } else if (val === 100) {
+        // 🚨 THE NEW EDGE CASE: Hitting 1.00 in a regular Tie-Breaker!
+        setBank(prev => { const b = [...prev]; b[turn] += 1000; return b; });
+        logAction(PLAYERS[turn]?.name || `P${turn + 1}`, val, 100, "💰 TIE-BREAKER DOLLAR! +$1,000!");
+        triggerJackpot();
+
+        // Add them to the VIP list so they get a Bonus Spin if they win the spin-off!
+        nextBonusEligible.push(turn);
       }
+
+      // Sync the React state
+      setBonusEligible(nextBonusEligible);
 
       // OVERWRITE the score on the scoreboard (Do not add!)
       const nextScores = [...playerScores];
@@ -631,13 +643,13 @@ export default function App() {
   }, [isAutoPlaying, isTurboMode, isTransmitting, isSpinning, gameState, isAwaitingChoice, turn, playerScores, leader, spin, handleStay, resetGame]);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-8 font-sans overflow-x-hidden relative">
+    <div className="min-h-screen bg-slate-900 text-white p-4 md:p-8 font-sans overflow-x-hidden relative">
 
-      {/* 🚨 THE MASTER GRID CONTAINER */}
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-16 items-start">
+      {/* 🚨 THE MASTER GRID CONTAINER (Expanded for 3-column support) */}
+      <div className="max-w-[1600px] mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-8 xl:gap-x-12 gap-y-12 items-start">
 
-          {/* --- ROW 1, COLUMN 1: Scoreboard & Logs --- */}
+          {/* --- COLUMN 1: Scoreboard & Logs --- */}
           <div className="w-full space-y-6">
             <Scoreboard
               players={PLAYERS}
@@ -652,7 +664,7 @@ export default function App() {
             <GameLogs logs={logs} />
           </div>
 
-          {/* --- ROW 1, COLUMN 2: Wheel & Controls --- */}
+          {/* --- COLUMN 2: Wheel & Controls --- */}
           <div className="w-full flex flex-col items-center justify-start space-y-12 pt-4">
             <Wheel
               rotation={rotation} topIndex={topIndex}
@@ -673,8 +685,11 @@ export default function App() {
             />
           </div>
 
-          {/* --- ROW 2, COLSPAN 2: Analytics Dashboard --- */}
-          <div className="lg:col-span-2 w-full pt-8 border-t border-slate-700/50">
+          {/* --- COLUMN 3: Analytics Dashboard --- 
+              On xl screens: It is the 3rd column (with a left border).
+              On lg screens: It drops underneath and spans both columns (with a top border).
+          */}
+          <div className="w-full lg:col-span-2 xl:col-span-1 pt-8 xl:pt-0 xl:border-t-0 xl:pl-8">
             <StudioAnalytics />
           </div>
 

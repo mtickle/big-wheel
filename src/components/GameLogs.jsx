@@ -3,9 +3,8 @@ import { memo } from 'react';
 const GameLogs = memo(({ logs }) => {
     return (
         <div className="bg-slate-800/40 p-4 rounded-2xl border-2 border-slate-700 flex flex-col h-[350px] w-full">
-            <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-3 px-1 flex justify-between">
-                <span>Game History</span>
-                {logs.length > 0 && <span className="text-[9px] animate-pulse text-red-500">● LIVE</span>}
+            <h3 className="text-sm font-sans text-slate-500 uppercase tracking-widest mb-3 px-1 flex justify-between">
+                Game History
             </h3>
 
             <div className="overflow-y-auto flex-1 space-y-2 pr-2 scrollbar-thin scrollbar-thumb-slate-700">
