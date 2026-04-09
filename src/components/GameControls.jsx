@@ -180,10 +180,11 @@ const GameControls = memo(({
         disabled={isSpinning}
         className="
           w-full max-w-md flex flex-col items-center justify-center 
-          py-4 px-8 rounded-2xl  
+          py-4 px-4 rounded-2xl  
           bg-linear-to-b from-emerald-700 to-emerald-900
            hover:bg-emerald-500 text-white border-2 border-emerald-500 
-           active:shadow-none active:translate-y-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0 transition-all duration-75"
+           active:shadow-none active:translate-y-2 disabled:opacity-40 disabled:cursor-not-allowed 
+           disabled:translate-y-0 transition-all duration-75"
       >
         <span className="text-xs font-sans text-emerald-200 uppercase tracking-wide mb-0.5">
           {currentPlayerName}
