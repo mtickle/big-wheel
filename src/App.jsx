@@ -1,5 +1,6 @@
 import confetti from "canvas-confetti"; // Make sure to npm install canvas-confetti
 import { useCallback, useEffect, useState } from "react";
+import DevDebugTray from "./components/DevDebugTray";
 import GameControls from "./components/GameControls";
 import GameLogs from "./components/GameLogs";
 import Scoreboard from "./components/Scoreboard";
@@ -643,11 +644,13 @@ export default function App() {
   }, [isAutoPlaying, isTurboMode, isTransmitting, isSpinning, gameState, isAwaitingChoice, turn, playerScores, leader, spin, handleStay, resetGame]);
 
   return (
+    // 🚨 THE MISSING WRAPPER! This holds the background color, padding, and text color.
     <div className="min-h-screen bg-slate-900 text-white p-4 md:p-8 font-sans overflow-x-hidden relative">
 
-      {/* 🚨 THE MASTER GRID CONTAINER (Expanded for 3-column support) */}
       <div className="max-w-[1600px] mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-8 xl:gap-x-12 gap-y-12 items-start">
+
+        {/* 1. THE FIX: A unified `gap-8` forces mathematically perfect gutters across the entire grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 items-start">
 
           {/* --- COLUMN 1: Scoreboard & Logs --- */}
           <div className="w-full space-y-6">
@@ -665,15 +668,13 @@ export default function App() {
           </div>
 
           {/* --- COLUMN 2: Wheel & Controls --- */}
-          <div className="w-full flex flex-col items-center justify-start pt-4">
-
+          {/* 2. THE FIX: Removed `pt-4` so the top perfectly aligns with Column 1 */}
+          <div className="w-full flex flex-col items-center justify-start">
             <Wheel
               rotation={rotation} topIndex={topIndex}
               transitionEnabled={transitionEnabled} size={500}
               wheelValues={WHEEL_VALUES} isSpinning={isSpinning}
             >
-
-              {/* 🚨 Notice the self-closing slash at the end of GameControls! */}
               <GameControls
                 isSpinning={isSpinning}
                 isAwaitingChoice={isAwaitingChoice}
@@ -686,68 +687,31 @@ export default function App() {
                 leader={leader}
                 bank={bank}
               />
-
-            </Wheel> {/* 🚨 Notice the closing Wheel tag! */}
-
+            </Wheel>
           </div>
 
-
-          {/* --- COLUMN 3: Analytics Dashboard --- 
-              On xl screens: It is the 3rd column (with a left border).
-              On lg screens: It drops underneath and spans both columns (with a top border).
-          */}
-          <div className="w-full lg:col-span-2 xl:col-span-1 pt-8 xl:pt-0 xl:border-t-0 xl:pl-8">
+          {/* --- COLUMN 3: Analytics Dashboard --- */}
+          {/* 3. THE FIX: Removed all the manual borders and padding overrides. 
+              The Grid's `gap-8` will handle the spacing automatically! */}
+          <div className="w-full lg:col-span-2 xl:col-span-1">
             <StudioAnalytics />
           </div>
 
         </div>
       </div>
 
-      {/* --- DEV DEBUG TRAY (Floats over everything) --- */}
-      <div className="fixed bottom-4 right-4 flex gap-2 items-center z-50 bg-slate-900/90 p-2 rounded-lg shadow-2xl border border-slate-700/50 backdrop-blur-sm">
-        <input
-          type="checkbox"
-          id="turboMode"
-          checked={isTurboMode}
-          onChange={(e) => setIsTurboMode(e.target.checked)}
-          className="w-4 h-4 text-yellow-500 bg-slate-900 border-slate-600 rounded focus:ring-yellow-500 focus:ring-2 cursor-pointer"
-        />
-        <label htmlFor="turboMode" className="text-sm font-mono text-slate-300 cursor-pointer select-none">
-          🚀 TURBO MODE
-        </label>
-
-        <button
-          onClick={() => setIsAutoPlaying(prev => !prev)}
-          className={`ml-2 p-2 text-[10px] uppercase font-bold rounded border transition-all cursor-pointer ${isAutoPlaying
-            ? 'bg-emerald-900/80 text-emerald-200 border-emerald-500 hover:bg-emerald-800'
-            : 'bg-slate-900/80 text-slate-400 border-slate-600/50 hover:bg-slate-800 hover:text-white'
-            }`}
-        >
-          {isAutoPlaying ? "🛑 Stop Auto" : "🤖 Start Auto"}
-        </button>
-
-        {/* FORCE BONUS BUTTON */}
-        <button
-          onClick={() => {
-            setBonusEligible([0]);
-            setGameState("bonus_round");
-            setTurn(0);
-            setBonusIndex(0);
-            logAction("DEBUG", "N/A", "1.00", "FORCED P1 BONUS ROUND");
-          }}
-          className="p-2 bg-slate-900/80 text-amber-400 text-[10px] uppercase font-bold rounded border border-amber-600/50 hover:bg-amber-900 hover:text-white transition-all opacity-50 hover:opacity-100 cursor-pointer"
-        >
-          ✨ Force P1 Bonus
-        </button>
-
-        {/* FORCE DOUBLE BUST BUTTON */}
-        <button
-          onClick={forceDoubleBust}
-          className="p-2 bg-red-900/80 text-red-200 text-[10px] uppercase font-bold rounded border border-red-500/50 hover:bg-red-800 hover:text-white transition-all opacity-50 hover:opacity-100 cursor-pointer"
-        >
-          ☢️ Force P1/P2 Bust
-        </button>
-      </div>
+      <DevDebugTray
+        isTurboMode={isTurboMode}
+        setIsTurboMode={setIsTurboMode}
+        isAutoPlaying={isAutoPlaying}
+        setIsAutoPlaying={setIsAutoPlaying}
+        setBonusEligible={setBonusEligible}
+        setGameState={setGameState}
+        setTurn={setTurn}
+        setBonusIndex={setBonusIndex}
+        logAction={logAction}
+        forceDoubleBust={forceDoubleBust}
+      />
 
     </div>
   );
