@@ -10,7 +10,7 @@ const Wheel = memo(({
 }) => {
     const SEGMENT_DEG = 18;
     const CENTER = size / 2;
-    const RADIUS = size / 2 - 25;
+    const RADIUS = size / 2 - 35;
     const TEXT_RADIUS = RADIUS - 50;
     const LIGHTS_COUNT = 40;
     const LIGHTS_RADIUS = RADIUS + 15;
@@ -31,7 +31,8 @@ const Wheel = memo(({
         <div className="relative group mt-20" style={{ width: size, height: size }}>
 
             {/* 1. THE STATIC CABINET (Does NOT rotate) */}
-            <div className="absolute -inset-10 bg-linear-to-b from-slate-900 via-black to-slate-900 rounded-full  border-8 border-slate-800 z-0" />
+            <div className="absolute -inset-1 bg-linear-to-b from-slate-900 via-black to-slate-900 rounded-full  
+            border-8 border-slate-800 z-0" />
 
             {/* 2. THE FIXED LIGHTS LAYER (Does NOT rotate) */}
             <svg
@@ -114,11 +115,11 @@ const Wheel = memo(({
                                 fill="#334155"
                             />
                             <text
-                                x={textPos.x}
+                                x={textPos.x-10}
                                 y={textPos.y}
                                 fill={val === 100 ? "#ef4444" : "#0f172a"}
-                                fontSize="30"
-                                fontWeight="900"
+                                fontSize="25"
+                                fontWeight="800"
                                 textAnchor="middle"
                                 dominantBaseline="middle"
                                 transform={`rotate(${midAngle + 90} ${textPos.x} ${textPos.y})`}

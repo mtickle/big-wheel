@@ -71,13 +71,13 @@ const StudioAnalytics = () => {
 
             {/* --- KPI CARDS --- */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 text-center shadow-inner">
+                <div className="bg-slate-800 p-6 rounded-lg border border-slate-700  shadow-inner">
                     <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Total&nbsp;Games</p>
                     <p className="text-2xl font-mono text-blue-400">{stats.total.toLocaleString()}</p>
                 </div>
-                <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 text-center shadow-inner">
+                <div className="bg-slate-800 p-6 rounded-lg border border-slate-700  shadow-inner">
                     <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Bonus&nbsp;Cash</p>
-                    <p className="text-4xl font-mono text-green-400">
+                    <p className="text-2xl font-mono text-green-400">
                         {new Intl.NumberFormat('en-US', {
                             style: 'currency',
                             currency: 'USD',
@@ -86,7 +86,7 @@ const StudioAnalytics = () => {
                         }).format(stats.totalBonusCash)}
                     </p>
                 </div>
-                <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 text-center shadow-inner">
+                <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-inner">
                     <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Perfect&nbsp;Games</p>
                     <p className="text-2xl font-mono text-yellow-400">{stats.perfectGames.toLocaleString()}</p>
                 </div>
@@ -97,13 +97,13 @@ const StudioAnalytics = () => {
                 <h3 className="text-sm font-bold text-slate-400 uppercase mb-3">Win Frequency Distribution</h3>
                 <div className="h-8 w-full flex rounded-full overflow-hidden shadow-inner bg-slate-800">
                     <div style={{ width: `${stats.winRates.p1}%` }} className="bg-green-500 flex items-center justify-center text-xs font-bold text-green-900 transition-all duration-500">
-                        {stats.winRates.p1 > 5 && `P1: ${stats.winRates.p1}%`}
+                        {stats.winRates.p1 > 5 && `C1: ${stats.winRates.p1}%`}
                     </div>
                     <div style={{ width: `${stats.winRates.p2}%` }} className="bg-orange-500 flex items-center justify-center text-xs font-bold text-orange-900 transition-all duration-500">
-                        {stats.winRates.p2 > 5 && `P2: ${stats.winRates.p2}%`}
+                        {stats.winRates.p2 > 5 && `C2: ${stats.winRates.p2}%`}
                     </div>
                     <div style={{ width: `${stats.winRates.p3}%` }} className="bg-blue-500 flex items-center justify-center text-xs font-bold text-blue-900 transition-all duration-500">
-                        {stats.winRates.p3 > 5 && `P3: ${stats.winRates.p3}%`}
+                        {stats.winRates.p3 > 5 && `C3: ${stats.winRates.p3}%`}
                     </div>
                 </div>
             </div>
