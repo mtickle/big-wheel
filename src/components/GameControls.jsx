@@ -26,18 +26,20 @@ const GameControls = memo(({
     const totalWon = hasWinner ? (bank[winnerIndex] || 0) : 0;
 
     return (
-      <div className="flex flex-col items-center gap-6 w-full animate-in fade-in zoom-in duration-500">
+      <div className="flex flex-col items-center w-full animate-in fade-in zoom-in duration-500">
         <div className="text-center">
-          <div className="text-slate-400 text-xs font-black uppercase tracking-[0.2em] mb-1">
+          {/* <div className="text-slate-400 text-xs font-black uppercase tracking-[0.2em] mb-1">
             {hasWinner ? "Winner" : "Game Over"}
-          </div>
-          <div className="text-4xl font-black text-white italic drop-shadow-lg">
+          </div> */}
+          {/* <div className="text-4xl font-black text-white italic drop-shadow-lg">
             {winnerName}
-          </div>
+          </div> */}
 
           {/* Only show the money if they actually won some! */}
           {hasWinner && totalWon > 0 ? (
-            <div className="mt-2 py-1 px-4 bg-green-500/20 border border-green-500/50 rounded-full text-green-400 font-bold text-sm inline-block animate-bounce">
+            <div className="mt-2 py-1 px-4 bg-green-500/20 border border-green-500/50 rounded-full text-green-400 
+            font-bold text-sm inline-block 
+            animate-bounce">
               💰 TOTAL WINNINGS: ${totalWon.toLocaleString()}
             </div>
           ) : null}
@@ -45,8 +47,13 @@ const GameControls = memo(({
 
         <button
           onClick={onReset}
-          className="w-full max-w-sm py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black uppercase tracking-widest shadow-[0_4px_0_rgb(30,58,138)] active:shadow-none active:translate-y-1 transition-all border-2 border-blue-400"
+          className="w-full max-w-sm  text-2xl
+          py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl 
+          font-sans  active:shadow-none active:translate-y-1 transition-all border-2 border-blue-400"
         >
+         <div className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">
+            {currentPlayerName} WINS
+          </div>
           New Showcase Showdown
         </button>
       </div>
@@ -100,9 +107,9 @@ const GameControls = memo(({
         <div className="text-yellow-400 font-sans text-center text-xl drop-shadow-md">
           {currentPlayerName}: Spin for the $10,000 bonus!       </div>
         <button
-  onClick={onSpin}
-  disabled={isSpinning}
-  className="
+          onClick={onSpin}
+          disabled={isSpinning}
+          className="
     w-full max-w-md flex flex-col items-center justify-center py-6 
     bg-linear-to-b from-yellow-400 to-yellow-600 hover:from-yellow-300 hover:to-yellow-500 
     text-slate-900 border-2 border-yellow-200 rounded-2xl
@@ -110,14 +117,14 @@ const GameControls = memo(({
     disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0 
     transition-all duration-75
   "
->
-  <span className="text-xs font-bold uppercase tracking-widest text-yellow-900/80 mb-0.5">
-    {currentPlayerName}
-  </span>
-  <span className="text-3xl font-sans leading-none drop-shadow-sm">
-    {isSpinning ? "Spinning..." : "Bonus Spin!"}
-  </span> 
-</button>
+        >
+          <span className="text-xs font-bold uppercase tracking-widest text-yellow-900/80 mb-0.5">
+            {currentPlayerName}
+          </span>
+          <span className="text-3xl font-sans leading-none drop-shadow-sm">
+            {isSpinning ? "Spinning..." : "Bonus Spin!"}
+          </span>
+        </button>
       </div>
     );
   }

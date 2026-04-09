@@ -43,9 +43,9 @@ const Wheel = memo(({
             <div className="relative group mt-14 mb-4" style={{ width: size, height: size }}>
 
                 {/* THE STATIC CABINET (Does NOT rotate) */}
-                <div className="absolute -inset-1 
-                    bg-linear-to-b from-slate-900 via-black to-slate-900 
-                    rounded-full border-4 border-slate-800 z-0" />
+                <div className="absolute inset-5 bg-linear-to-b from-slate-900 via-black to-slate-900 
+                rounded-full border-4 border-slate-800 z-0" />
+
 
                 {/* THE FIXED LIGHTS LAYER (Does NOT rotate) */}
                 <svg
@@ -74,7 +74,7 @@ const Wheel = memo(({
                 </svg>
 
                 {/* THE RED POINTER (Fixed at the top) */}
-                <div className="absolute -top-14 left-1/2 -translate-x-1/2 z-50 drop-shadow-[0_8px_8px_rgba(0,0,0,0.8)]">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-50 drop-shadow-[0_8px_8px_rgba(0,0,0,0.8)]">
                     <div className="w-0 h-0 border-l-28 border-r-28 border-t-56 border-l-transparent border-r-transparent border-t-red-600" />
                     <div className="w-3 h-12 bg-slate-500 absolute -top-6 left-1/2 -translate-x-1/2 rounded-full border-2 border-slate-700" />
                 </div>
@@ -150,7 +150,7 @@ const Wheel = memo(({
 
             {/* This creates the slot for GameControls to render inside the card */}
             {children && (
-                <div className="w-full mt-4 pt-6 border-t border-slate-700/50 flex justify-center">
+                <div className="w-full border-slate-700/50 flex justify-center">
                     {children}
                 </div>
             )}
