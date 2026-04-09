@@ -77,7 +77,14 @@ const StudioAnalytics = () => {
                 </div>
                 <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 text-center shadow-inner">
                     <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Bonus&nbsp;Cash</p>
-                    <p className="text-2xl font-mono text-green-400">${stats.totalBonusCash.toLocaleString()}</p>
+                    <p className="text-4xl font-mono text-green-400">
+                        {new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'USD',
+                            notation: 'compact',
+                            maximumFractionDigits: 1 // Changes 2.38M to 2.4M for a cleaner look. Change to 2 if you want 2.38M!
+                        }).format(stats.totalBonusCash)}
+                    </p>
                 </div>
                 <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 text-center shadow-inner">
                     <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Perfect&nbsp;Games</p>
