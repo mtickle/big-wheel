@@ -665,25 +665,32 @@ export default function App() {
           </div>
 
           {/* --- COLUMN 2: Wheel & Controls --- */}
-          <div className="w-full flex flex-col items-center justify-start space-y-12 pt-4">
+          <div className="w-full flex flex-col items-center justify-start pt-4">
+
             <Wheel
               rotation={rotation} topIndex={topIndex}
               transitionEnabled={transitionEnabled} size={500}
               wheelValues={WHEEL_VALUES} isSpinning={isSpinning}
-            />
-            <GameControls
-              isSpinning={isSpinning}
-              isAwaitingChoice={isAwaitingChoice}
-              gameState={gameState}
-              onSpin={spin}
-              onStay={handleStay}
-              onReset={resetGame}
-              players={PLAYERS}
-              turn={turn}
-              leader={leader}
-              bank={bank}
-            />
+            >
+
+              {/* 🚨 Notice the self-closing slash at the end of GameControls! */}
+              <GameControls
+                isSpinning={isSpinning}
+                isAwaitingChoice={isAwaitingChoice}
+                gameState={gameState}
+                onSpin={spin}
+                onStay={handleStay}
+                onReset={resetGame}
+                players={PLAYERS}
+                turn={turn}
+                leader={leader}
+                bank={bank}
+              />
+
+            </Wheel> {/* 🚨 Notice the closing Wheel tag! */}
+
           </div>
+
 
           {/* --- COLUMN 3: Analytics Dashboard --- 
               On xl screens: It is the 3rd column (with a left border).

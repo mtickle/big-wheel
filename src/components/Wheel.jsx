@@ -6,13 +6,14 @@ const Wheel = memo(({
     transitionEnabled,
     size,
     wheelValues,
-    isSpinning
+    isSpinning,
+    children
 }) => {
     const SEGMENT_DEG = 18;
     const CENTER = size / 2;
-    const RADIUS = size / 2 - 35;
+    const RADIUS = size / 2 - 55;
     const TEXT_RADIUS = RADIUS - 50;
-    const LIGHTS_COUNT = 40;
+    const LIGHTS_COUNT = 50;
     const LIGHTS_RADIUS = RADIUS + 15;
 
     const polarToCartesian = (cx, cy, r, angle) => {
@@ -26,6 +27,7 @@ const Wheel = memo(({
         const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
         return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y} Z`;
     };
+
     return (
         <div className="bg-slate-800/40 p-6 rounded-2xl border-2 border-slate-700 flex flex-col items-center w-full shadow-xl">
 
@@ -41,7 +43,9 @@ const Wheel = memo(({
             <div className="relative group mt-14 mb-4" style={{ width: size, height: size }}>
 
                 {/* THE STATIC CABINET (Does NOT rotate) */}
-                <div className="absolute -inset-1 bg-linear-to-b from-slate-900 via-black to-slate-900 rounded-full border-8 border-slate-800 z-0" />
+                <div className="absolute -inset-1 
+                    bg-linear-to-b from-slate-900 via-black to-slate-900 
+                    rounded-full border-4 border-slate-800 z-0" />
 
                 {/* THE FIXED LIGHTS LAYER (Does NOT rotate) */}
                 <svg
@@ -143,7 +147,15 @@ const Wheel = memo(({
                 </svg>
 
             </div>
+
+            {/* This creates the slot for GameControls to render inside the card */}
+            {children && (
+                <div className="w-full mt-4 pt-6 border-t border-slate-700/50 flex justify-center">
+                    {children}
+                </div>
+            )}
         </div>
+
     );
 });
 
